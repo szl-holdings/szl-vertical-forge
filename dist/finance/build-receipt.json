@@ -1,0 +1,15 @@
+{
+  "chain_event": {
+    "artifact_sha256": "e389c79b0f76c2e16177bb229a81b6dd6507c9753ad89d9a2980d9fb08aa88c7",
+    "chain_hash": "7cbf89ee8be1518fe1ea103052d7be3fbc0d99562355f90634819da19c45230a",
+    "kind": "generated-index",
+    "path": "finance/index.html",
+    "prev_hash": "1ec52b1eb41ba3d7cc76f8b980c9f563c97d934cc20fa83266ed378ef71767a1"
+  },
+  "config_sha256": "a0c27488ab4e665eeb8ca2e7aa46df75131fa6c43c18cc523549f50841f3d557",
+  "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
+  "fleet_master_hash": "712c20ee1ab8be96b2d8ec7cba120321fb2e2487872c2ce088fce39353e97571",
+  "generator": "szl-vertical-forge/0.2.1",
+  "schema": "szl.vertical-forge.artifact/v1",
+  "vertical": "finance"
+}

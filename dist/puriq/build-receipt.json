@@ -1,0 +1,15 @@
+{
+  "chain_event": {
+    "artifact_sha256": "b73876493b10edb44ab6ec3b7db6570d9e2845f654ab07ba3d2496722d6988c9",
+    "chain_hash": "f4c294ba8eeffee91691324fc29614adcd0dacd099fc44ca55d78f6052364004",
+    "kind": "generated-index",
+    "path": "puriq/index.html",
+    "prev_hash": "36572570aaa13f8ce838a67976bd3e80c7b63e801effcec8815cf3b1fa818acb"
+  },
+  "config_sha256": "ce05a52618f88452d3329567c2859cb60da9575f74b381dba287637c09dd8378",
+  "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
+  "fleet_master_hash": "712c20ee1ab8be96b2d8ec7cba120321fb2e2487872c2ce088fce39353e97571",
+  "generator": "szl-vertical-forge/0.2.1",
+  "schema": "szl.vertical-forge.artifact/v1",
+  "vertical": "puriq"
+}

@@ -1,42 +1,71 @@
 # szl-vertical-forge
 
-Audited vertical configs in, killinchu-pattern shells out. The forge is how
-every SZL vertical gets the flagship treatment: a landing page with the
-application demoed inside, probed against real data at request time, wired
-to the estate's repos, kernels, models, and datasets — with a build receipt
-per shell and one deterministic master hash for the whole fleet.
+`szl-vertical-forge` turns the eight audited vertical configurations into
+deployable landing-page artifacts and recomputable build receipts. It is a
+build tool, not a runtime or provider controller.
 
-## The pattern (distilled from killinchu)
+Each generated vertical contains:
 
-Landing hero → doctrine chips → live-status pill (PROBING / MEASURED /
-UNAVAILABLE / DECLARED) → the live demo panel → estate wiring grid →
-receipt footer. No fabricated data anywhere: the shell's own JS probes its
-endpoint and says UNAVAILABLE rather than fake it.
+- `index.html`, with a read-only runtime probe and a link to the governed
+  workbench at `/panels`;
+- `build-receipt.json`, binding that index to its audited configuration and
+  the fleet receipt chain;
+- fleet-level `RECEIPT.json`, a canonical-JSON SHA-256 chain starting from
+  64 zeroes and ending at the deterministic master hash.
 
-## The eight audited verticals
+The browser reports `OBSERVED` only after a real HTTP response and
+`UNAVAILABLE` on errors. Reachability is never represented as a domain
+measurement, authorization, deployment, or provider state.
+
+## Audited verticals
 
 killinchu · sentra · puriq · terra · lyte · counsel · finance · david-leads
-— configs in `src/szl_vertical_forge/verticals.json`, taken from the
-2026-09-04 estate audit (owner-amended: aegis→sentra, vessels→killinchu).
 
-## Usage
+The source configuration is
+`src/szl_vertical_forge/verticals.json`. Every row includes explicit lineage:
+the public field leader, the job that leader demonstrates, and the original
+SZL adaptation. The forge copies no proprietary implementation.
+
+Primary lineage sources are rendered into every generated shell and included
+in its configuration digest:
+
+- Killinchu: [Anduril's JIATF-401 Lattice announcement](https://www.anduril.com/news/jiatf-401-selects-lattice-as-enterprise-tactical-command-and-control-platform-for-c-uas)
+- Sentra: [Credo AI Agent Registry](https://www.credo.ai/ai-agent-registry) and [Arthur observability documentation](https://docs.arthur.ai/docs/platform-ui)
+- Terra: [Regrid MCP documentation](https://support.regrid.com/docs/mcp-server)
+- Lyte: [Grafana's OpenTelemetry Collector documentation](https://grafana.com/docs/loki/latest/send-data/otel/otel-collector-getting-started/)
+- Counsel: [Harvey](https://www.harvey.ai/) and [Thomson Reuters CoCounsel Legal](https://legal.thomsonreuters.com/en/products/cocounsel-legal)
+- Finance: [QuantConnect LEAN](https://www.quantconnect.com/docs/v2/writing-algorithms/key-concepts/algorithm-engine) and [Riskfolio-Lib](https://riskfolio-lib.readthedocs.io/en/latest/)
+- PURIQ and David Leads: their canonical SZL source repositories, because the
+  category claim is explicitly internal rather than attributed externally.
+
+## Install, test, and generate
 
 ```bash
-pip install -e . pytest
+python -m pip install --no-build-isolation -e . "pytest==8.4.2"
 python -m pytest tests/ -q
-python -m szl_vertical_forge.forge   # prints the master hash of the fleet
+python -m szl_vertical_forge.forge generate --output-dir dist
+python -m szl_vertical_forge.forge verify --output-dir dist
 ```
 
-Same configs, same bytes, same master hash — on any machine. Regenerate and
-compare hashes instead of trusting presented files.
+Generate and verify only Terra when preparing its deployment payload:
 
-## Doctrine
+```bash
+python -m szl_vertical_forge.forge generate --vertical terra --output-dir build/terra
+python -m szl_vertical_forge.forge verify --vertical terra --output-dir build/terra
+```
 
-- Configs are the audited estate map, not invention.
-- Fail-closed validation: a bad config stops the run and names every error.
-- Deterministic output — the receipt is regenerable, not just presented.
-- Python 3.11+, standard library only.
+`generate` exits nonzero unless every expected file is written and then
+verified byte-for-byte. `verify` never repairs mismatches; missing or changed
+bytes produce `INVALID` and a nonzero exit status.
+
+## Operational boundary
+
+The forge proves local deterministic generation and receipt-chain integrity.
+It does not prove that a Space is deployed, healthy, source-aligned, or backed
+by a real data provider. Deployment must preserve the vertical's existing
+workbench at `/panels`, land through its protected source workflow, and then
+verify the immutable provider revision plus live routes independently.
 
 ## License
 
-Apache-2.0 — canonical org text (see LICENSE pointer).
+Apache-2.0 — canonical organization text is referenced by `LICENSE`.

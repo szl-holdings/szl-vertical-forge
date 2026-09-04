@@ -1,0 +1,15 @@
+{
+  "chain_event": {
+    "artifact_sha256": "938f7788a187c1236f3e84ab86af95bf09005857ab6af9a114aa7ade183c8a61",
+    "chain_hash": "e3346f0e8c3df839ad563acd7ba83243fdb46a91634a845bfb0af274f251471f",
+    "kind": "generated-index",
+    "path": "sentra/index.html",
+    "prev_hash": "f4c294ba8eeffee91691324fc29614adcd0dacd099fc44ca55d78f6052364004"
+  },
+  "config_sha256": "6543cec416b6ae1c6c6efdfec91c4fb1e14daae95db146897487b8ce3496b7fc",
+  "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
+  "fleet_master_hash": "712c20ee1ab8be96b2d8ec7cba120321fb2e2487872c2ce088fce39353e97571",
+  "generator": "szl-vertical-forge/0.2.1",
+  "schema": "szl.vertical-forge.artifact/v1",
+  "vertical": "sentra"
+}
