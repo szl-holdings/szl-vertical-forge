@@ -27,8 +27,14 @@ def test_validator_accepts_the_audited_eight():
         assert validate_vertical(v) == [], v["id"]
 
 
-def test_generated_html_carries_real_wiring():
+def test_lineage_is_required_and_rendered():
+    no_lin = {"id": "test-v", "name": "T", "domain": "D", "tagline": "t",
+              "widget": "probe", "kernels": ["k"], "repos": ["r"]}
+    assert "lineage must carry leader + job + tweak" in validate_vertical(no_lin)
     out = forge([v for v in load_verticals() if v["id"] == "killinchu"])
     assert out["state"] == "MEASURED"
+
+
+def test_generated_html_carries_real_wiring():
     single = forge([load_verticals()[0]])
     assert single["state"] == "MEASURED"

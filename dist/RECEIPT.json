@@ -1,19 +1,20 @@
 {
-  "schema": "szl.vertical-forge.receipt/v1",
-  "generator": "szl-vertical-forge v0.1.0",
+  "schema": "szl.vertical-forge.receipt/v2",
+  "generator": "szl-vertical-forge v0.2.0 (lineage instill)",
   "vertical_count": 8,
-  "per_file_sha256": {
-    "counsel/index.html": "e0a1cc1391128156",
-    "david-leads/index.html": "3318fb08957d612d",
-    "finance/index.html": "f8a8ef395704be37",
-    "killinchu/index.html": "8ccf0a398ce61f19",
-    "lyte/index.html": "26369378e1df1c20",
-    "puriq/index.html": "e05959e5ebce2ccc",
-    "sentra/index.html": "27035037c0061386",
-    "terra/index.html": "0605ee062626566a"
+  "change": "every vertical now names its field leader, the job that leader owns, and the SZL tweak - Take the JOB from the leader, never the code",
+  "per_file_sha256_16": {
+    "counsel/index.html": "cb023f445480cab8",
+    "david-leads/index.html": "50ceb080974de07a",
+    "finance/index.html": "c8c7f03348d12684",
+    "killinchu/index.html": "026e443497249215",
+    "lyte/index.html": "f2c6168b65ffbc09",
+    "puriq/index.html": "425a0323f391d0c0",
+    "sentra/index.html": "4a275667c0511717",
+    "terra/index.html": "69458ede4fd5611d"
   },
-  "note": "per-file values above are truncated to 16 hex chars for readability in this manifest; the authoritative check is master_hash over FULL hashes - regenerate and compare",
-  "master_hash": "dfe76283112249f7",
-  "verified_run": "pre-push, connector session 2026-09-04 - regenerated twice from verticals.json, byte-identical",
+  "master_hash": "096eb2c2b1eddf32",
+  "previous_master": "dfe76283112249f7 (v0.1.0)",
+  "verified_run": "pre-push, connector session 2026-09-04 - full shells generated twice, byte-identical",
   "label": "regenerate with python -m szl_vertical_forge.forge and compare; do not trust presented files"
 }
