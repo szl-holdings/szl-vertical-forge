@@ -2,6 +2,9 @@
 
 import copy
 import json
+import re
+import shutil
+import subprocess
 from pathlib import Path
 
 from szl_vertical_forge import (
@@ -16,7 +19,7 @@ from szl_vertical_forge.forge import VERSION, main
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MASTER_HASH = (
-    "712c20ee1ab8be96b2d8ec7cba120321fb2e2487872c2ce088fce39353e97571"
+    "26f1316c4c15886ebbb80cd625bc92d741dce83f4ccff02ce04eaefa4c03e34f"
 )
 
 
@@ -69,6 +72,33 @@ def test_generated_html_carries_runtime_and_receipt_wiring():
     assert 'href="/build-receipt.json"' in page
     assert "OBSERVED - HTTP" in page
     assert "Reachability alone is not a domain measurement" in page
+
+
+def test_every_generated_browser_script_parses_and_styles_are_unescaped():
+    node = shutil.which("node")
+    assert node is not None, "Node.js is required to validate generated browser scripts"
+    for path, artifact in forge()["files"].items():
+        if not path.endswith("index.html"):
+            continue
+        page = artifact.decode("utf-8")
+        style = re.search(r"<style>(.*?)</style>", page, re.S).group(1)
+        assert ":root{--bg:" in style, path
+        assert "{{" not in style, path
+        scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
+        assert scripts, path
+        for script in scripts:
+            checked = subprocess.run(
+                [node, "--check"], input=script, text=True,
+                encoding="utf-8", capture_output=True, timeout=15,
+            )
+            assert checked.returncode == 0, f"{path}: {checked.stderr}"
+
+
+def test_template_like_text_is_not_interpreted_as_another_placeholder():
+    vertical = copy.deepcopy(load_verticals()[0])
+    vertical["tagline"] = "Keep {{braces}} and {endpoint_js} as text"
+    page = forge([vertical])["files"]["killinchu/index.html"].decode()
+    assert "Keep {{braces}} and {endpoint_js} as text" in page
 
 
 def test_receipt_chain_recomputes_and_rejects_tampering():
@@ -146,4 +176,4 @@ def test_cli_generates_and_then_verifies_selected_vertical(tmp_path, capsys):
 
 
 def test_package_version_matches_generator():
-    assert VERSION == "0.2.1"
+    assert VERSION == "0.2.2"

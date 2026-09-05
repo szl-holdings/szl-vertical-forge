@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.2 — 2026-09-05 (browser template repair)
+
+- Render the format template in one pass so CSS and JavaScript brace escapes
+  become browser syntax while substituted text remains literal data.
+- Parse each generated browser script with Node.js in the regression suite and
+  verify CSS template escapes are removed.
+- Regenerate the eight artifacts and their receipt chain from the repaired source.
+
 ## v0.2.1 — 2026-09-04 (operational artifact pipeline)
 
 - The CLI now writes and byte-verifies generated artifacts instead of printing

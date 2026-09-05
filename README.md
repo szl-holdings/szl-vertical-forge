@@ -40,6 +40,8 @@ in its configuration digest:
 
 ## Install, test, and generate
 
+The test suite also requires Node.js on PATH to parse every generated browser script.
+
 ```bash
 python -m pip install --no-build-isolation -e . "pytest==8.4.2"
 python -m pytest tests/ -q
