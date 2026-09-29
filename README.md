@@ -11,7 +11,9 @@ Each generated vertical contains:
 - `build-receipt.json`, binding that index to its audited configuration and
   the fleet receipt chain;
 - fleet-level `RECEIPT.json`, a canonical-JSON SHA-256 chain starting from
-  64 zeroes and ending at the deterministic master hash.
+  64 zeroes and ending at `chain_tip`; the deterministic `master_hash` binds
+  that tip to the canonical receipt header (generator, algorithm, genesis,
+  config digest and vertical count), so a mutated header does not verify.
 
 The browser reports `OBSERVED` only after a real HTTP response and
 `UNAVAILABLE` on errors. Reachability is never represented as a domain

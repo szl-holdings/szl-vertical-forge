@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.3 — 2026-09-29 (receipt header authority)
+
+- Receipt schema `szl.vertical-forge.receipt/v4`: `master_hash` is now the
+  SHA-256 of the canonical receipt header (`schema`, `generator`, `algorithm`,
+  `genesis`, `config_sha256`, `vertical_count`) bound to the event-chain tip,
+  which is recorded separately as `chain_tip`.
+- `verify_receipt` fails closed on a missing or mutated header field, an
+  unsupported algorithm, a non-zero genesis, an unrecognised generator or a
+  malformed config digest; an optional `expected_config_sha256` checks the
+  config digest against an independently supplied authority.
+- Regenerated the committed receipts; index bytes are unchanged.
+
 ## v0.2.2 — 2026-09-05 (browser template repair)
 
 - Render the format template in one pass so CSS and JavaScript brace escapes

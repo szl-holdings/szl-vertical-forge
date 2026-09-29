@@ -18,14 +18,25 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import quote, urlsplit
 
-VERSION = "0.2.2"
-RECEIPT_SCHEMA = "szl.vertical-forge.receipt/v3"
+VERSION = "0.2.3"
+RECEIPT_SCHEMA = "szl.vertical-forge.receipt/v4"
+RECEIPT_ALGORITHM = "sha256-canonical-json-chain"
+HEADER_FIELDS = (
+    "schema",
+    "generator",
+    "algorithm",
+    "genesis",
+    "config_sha256",
+    "vertical_count",
+)
 ARTIFACT_SCHEMA = "szl.vertical-forge.artifact/v1"
 ZERO_HASH = "0" * 64
 WIDGETS = {"osint", "receipts", "lambda", "probe", "ouroboros", "bm25", "quant"}
 VERTICALS_PATH = Path(__file__).with_name("verticals.json")
 ASSET_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
 SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
+HEX64_RE = re.compile(r"[0-9a-f]{64}")
+GENERATOR_RE = re.compile(r"szl-vertical-forge/[0-9]+\.[0-9]+\.[0-9]+")
 
 
 def canonical_json(value: Any) -> str:
@@ -206,22 +217,59 @@ def _receipt_for(index_files: dict[str, bytes], config_sha256: str) -> dict[str,
         event["chain_hash"] = sha256_bytes(canonical_json(event).encode("utf-8"))
         previous = event["chain_hash"]
         events.append(event)
-    return {
+    header = {
         "schema": RECEIPT_SCHEMA,
         "generator": f"szl-vertical-forge/{VERSION}",
-        "algorithm": "sha256-canonical-json-chain",
+        "algorithm": RECEIPT_ALGORITHM,
         "genesis": ZERO_HASH,
         "config_sha256": config_sha256,
         "vertical_count": len(index_files),
+    }
+    return {
+        **header,
         "events": events,
-        "master_hash": previous,
+        "chain_tip": previous,
+        "master_hash": _master_hash(header, previous),
     }
 
 
-def verify_receipt(receipt: Any) -> dict[str, Any]:
+def _master_hash(header: dict[str, Any], chain_tip: str) -> str:
+    """Bind the canonical receipt header and the event-chain tip together.
+
+    The header (generator, algorithm, genesis, config digest, count) is part of
+    the verified authority: mutating any header field changes the master hash.
+    """
+    return sha256_bytes(
+        canonical_json({"chain_tip": chain_tip, "header": header}).encode("utf-8")
+    )
+
+
+def verify_receipt(
+    receipt: Any, expected_config_sha256: str | None = None
+) -> dict[str, Any]:
+    """Recompute the receipt chain and its bound header.
+
+    ``expected_config_sha256`` is an optional independently supplied config
+    authority; when given, the receipt's config digest must equal it.
+    """
     if not isinstance(receipt, dict) or receipt.get("schema") != RECEIPT_SCHEMA:
         return {"state": "INVALID", "detail": "receipt schema mismatch"}
-    previous = ZERO_HASH
+    missing = [field for field in HEADER_FIELDS if field not in receipt]
+    if missing:
+        return {"state": "INVALID", "detail": "receipt header missing: " + ", ".join(missing)}
+    if receipt.get("algorithm") != RECEIPT_ALGORITHM:
+        return {"state": "INVALID", "detail": "unsupported receipt algorithm"}
+    if receipt.get("genesis") != ZERO_HASH:
+        return {"state": "INVALID", "detail": "receipt genesis mismatch"}
+    generator = receipt.get("generator")
+    if not isinstance(generator, str) or not GENERATOR_RE.fullmatch(generator):
+        return {"state": "INVALID", "detail": "receipt generator not recognised"}
+    config_sha256 = receipt.get("config_sha256")
+    if not isinstance(config_sha256, str) or not HEX64_RE.fullmatch(config_sha256):
+        return {"state": "INVALID", "detail": "receipt config digest malformed"}
+    if expected_config_sha256 is not None and config_sha256 != expected_config_sha256:
+        return {"state": "INVALID", "detail": "receipt config digest does not match expected authority"}
+    previous = receipt["genesis"]
     events = receipt.get("events")
     if not isinstance(events, list) or not events:
         return {"state": "INVALID", "detail": "receipt events missing"}
@@ -239,11 +287,15 @@ def verify_receipt(receipt: Any) -> dict[str, Any]:
                 "detail": f"chain hash mismatch at event {position}",
             }
         previous = calculated
-    if receipt.get("master_hash") != previous:
-        return {"state": "INVALID", "detail": "master hash mismatch"}
+    if receipt.get("chain_tip") != previous:
+        return {"state": "INVALID", "detail": "chain tip mismatch"}
     if receipt.get("vertical_count") != len(events):
         return {"state": "INVALID", "detail": "vertical count mismatch"}
-    return {"state": "VERIFIED", "events": len(events), "master_hash": previous}
+    header = {field: receipt[field] for field in HEADER_FIELDS}
+    master_hash = _master_hash(header, previous)
+    if receipt.get("master_hash") != master_hash:
+        return {"state": "INVALID", "detail": "master hash mismatch"}
+    return {"state": "VERIFIED", "events": len(events), "master_hash": master_hash}
 
 
 def forge(verticals: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -350,7 +402,9 @@ def verify_output(
             missing.append(relative)
         elif target.read_bytes() != expected:
             mismatched.append(relative)
-    chain = verify_receipt(result["receipt"])
+    chain = verify_receipt(
+        result["receipt"], expected_config_sha256=result["receipt"].get("config_sha256")
+    )
     state = (
         "VERIFIED_LOCAL_ARTIFACTS"
         if not missing and not mismatched and chain["state"] == "VERIFIED"

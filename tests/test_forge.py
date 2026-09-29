@@ -7,6 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from szl_vertical_forge import (
     forge,
     load_verticals,
@@ -19,7 +21,7 @@ from szl_vertical_forge.forge import VERSION, main
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MASTER_HASH = (
-    "26f1316c4c15886ebbb80cd625bc92d741dce83f4ccff02ce04eaefa4c03e34f"
+    "117dd82061d3be114fe1e5207bae68a6e754514af8121e9b01abd89b53d3f0c9"
 )
 
 
@@ -109,6 +111,50 @@ def test_receipt_chain_recomputes_and_rejects_tampering():
     assert verify_receipt(tampered)["state"] == "INVALID"
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("config_sha256", "e" * 64),
+        ("generator", "szl-vertical-forge/9.9.9"),
+        ("algorithm", "sha256-something-else"),
+        ("genesis", "1" * 64),
+    ],
+)
+def test_receipt_header_mutation_is_not_verified(field, value):
+    receipt = forge()["receipt"]
+    tampered = copy.deepcopy(receipt)
+    tampered[field] = value
+    assert tampered["events"] == receipt["events"]
+    assert tampered["master_hash"] == receipt["master_hash"]
+    assert verify_receipt(tampered)["state"] == "INVALID"
+
+
+def test_receipt_header_fields_are_required():
+    receipt = forge()["receipt"]
+    for field in ("generator", "algorithm", "genesis", "config_sha256"):
+        tampered = copy.deepcopy(receipt)
+        del tampered[field]
+        assert verify_receipt(tampered)["state"] == "INVALID"
+
+
+def test_receipt_config_must_match_independent_authority():
+    receipt = forge()["receipt"]
+    assert (
+        verify_receipt(receipt, expected_config_sha256=receipt["config_sha256"])["state"]
+        == "VERIFIED"
+    )
+    assert verify_receipt(receipt, expected_config_sha256="0" * 64)["state"] == "INVALID"
+
+
+def test_receipt_master_hash_is_not_the_bare_chain_tip():
+    receipt = forge()["receipt"]
+    assert receipt["chain_tip"] == receipt["events"][-1]["chain_hash"]
+    assert receipt["master_hash"] != receipt["chain_tip"]
+    tampered = copy.deepcopy(receipt)
+    tampered["master_hash"] = tampered["chain_tip"]
+    assert verify_receipt(tampered)["state"] == "INVALID"
+
+
 def test_generate_write_and_verify_round_trip(tmp_path):
     result = forge()
     assert write_output(result, tmp_path)["state"] == "WRITTEN"
@@ -176,4 +222,4 @@ def test_cli_generates_and_then_verifies_selected_vertical(tmp_path, capsys):
 
 
 def test_package_version_matches_generator():
-    assert VERSION == "0.2.2"
+    assert VERSION == "0.2.3"
