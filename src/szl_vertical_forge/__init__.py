@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 VERTICALS_PATH = Path(__file__).with_name("verticals.json")
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __all__ = [
     "VERTICALS_PATH",
     "forge",
