@@ -83,10 +83,10 @@ def test_every_generated_browser_script_parses_and_styles_are_unescaped():
         if not path.endswith("index.html"):
             continue
         page = artifact.decode("utf-8")
-        style = re.search(r"<style>(.*?)</style>", page, re.S).group(1)
+        style = re.search(r"<style\b[^>]*>(.*?)</style\b[^>]*>", page, re.S | re.I).group(1)
         assert ":root{--bg:" in style, path
         assert "{{" not in style, path
-        scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
+        scripts = re.findall(r"<script\b[^>]*>(.*?)</script\b[^>]*>", page, re.S | re.I)
         assert scripts, path
         for script in scripts:
             checked = subprocess.run(
