@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "abeb13a98e82c8b294259717d6fb981ba43e1284c8faa01a1af5b4ff89194822",
-    "chain_hash": "3c1ded7d92fcc54ee87fa318f05cb0d55c8ee307c32b509522444b0425433f31",
+    "artifact_sha256": "33b045e5c231b4c9eacfdca99bd00c7902d8f46ac43036227eade3c35c6a4c34",
+    "chain_hash": "958ee01f35fd9ca02eaa91daf8a9206db98daf5336f747097a041da0a01d02dc",
     "kind": "generated-index",
     "path": "puriq/index.html",
-    "prev_hash": "3f8909834e5720935b7e452ae403f9c372119f9926891ee05d8c7bef52894582"
+    "prev_hash": "e64a8382f2a8fdb29b13216e7dc08d3fc662ac4f9b915924d5c0cc45a4b39a93"
   },
   "config_sha256": "ce05a52618f88452d3329567c2859cb60da9575f74b381dba287637c09dd8378",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "117dd82061d3be114fe1e5207bae68a6e754514af8121e9b01abd89b53d3f0c9",
+  "fleet_master_hash": "f1ef3cb0f1f4885c39e3834edbabf4a006d6491ad43f00fb4e645ed1b323de54",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "puriq"

@@ -15,6 +15,7 @@ from szl_vertical_forge.forge import load_verticals, render_vertical  # noqa: E4
 SOURCE = "https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/realestate/feed"
 COUNSEL_SOURCE = "https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/legal/feed"
 FINANCE_SOURCE = "https://szlholdings-a11oy.hf.space/api/a11oy/v1/finance/overview"
+FINANCE_REVISION = "a" * 40
 NODE = r"""
 const fs=require('node:fs'),vm=require('node:vm');
 const input=JSON.parse(fs.readFileSync(0,'utf8'));
@@ -43,6 +44,14 @@ def terra_body(**changes):
     body = {"status": "REACHABLE", "http_status": 200, "source": SOURCE,
             "data": {"vertical": "realestate", "hpd_litigations": source(),
                      "dob_violations": source(), "rates": source()}}
+    body.update(changes)
+    return body
+
+
+def counsel_body(**changes):
+    body = {"status": "REACHABLE", "http_status": 200, "source": COUNSEL_SOURCE,
+            "data": {"vertical": "legal", "federal_register": source(),
+                     "court_filings": source()}}
     body.update(changes)
     return body
 
@@ -131,14 +140,57 @@ class ProbeStatusTests(unittest.TestCase):
                 failed = {"status": "UNAVAILABLE", "http_status": 503,
                           "source": source_url, "data": {"error": "upstream unavailable"}}
                 self.assertEqual(self.probe(failed, vertical=vertical)["badge"], "UNAVAILABLE")
+                # Finance's canonical proxy validates the overview against CFG's
+                # revision, then returns it inside data without an outer revision.
+                data = ({"schema": "szl.finance.overview/v1", "source_revision": FINANCE_REVISION,
+                         "execution_enabled": False, "ok": True, "state": "SNAPSHOTS_AVAILABLE",
+                         "sources_requested": 4, "sources_available": 4,
+                         "data": {key: {"ok": True, "state": "SNAPSHOT"} for key in
+                                  ("polymarket-markets", "kalshi-markets", "coinbase-ticker", "treasury-rates")}}
+                        if vertical == "finance" else counsel_body()["data"])
                 reachable = {"status": "SNAPSHOT" if vertical == "finance" else "REACHABLE", "http_status": 200,
-                             "source": source_url, "data": {"state": "REPORTED", "ok": True}}
+                             "source": source_url, "data": data}
                 self.assertEqual(self.probe(reachable, vertical=vertical)["badge"], "REACHABLE")
                 if vertical == "finance":
                     self.assertEqual(self.probe({**reachable, "data": {"ok": False}},
                                                 vertical=vertical)["badge"], "UNAVAILABLE")
+                    self.assertEqual(self.probe({**reachable, "data": {**data, "source_revision": "bad"}},
+                                                vertical=vertical)["badge"], "UNAVAILABLE")
+                    self.assertEqual(self.probe({**reachable, "source_revision": "b" * 40},
+                                                vertical=vertical)["badge"], "UNAVAILABLE")
+                    self.assertEqual(self.probe({**reachable, "source_revision": FINANCE_REVISION},
+                                                vertical=vertical)["badge"], "REACHABLE")
                 self.assertEqual(self.probe({**reachable, "source": "https://wrong.example"},
                                             vertical=vertical)["badge"], "UNAVAILABLE")
+
+    def test_counsel_source_freshness_and_domain_are_not_reachability(self):
+        unavailable = counsel_body()
+        unavailable["data"]["federal_register"] = source("unavailable")
+        unavailable["data"]["court_filings"] = source("unavailable")
+        self.assertEqual(self.probe(unavailable, vertical="counsel")["badge"], "UNAVAILABLE")
+        cached = counsel_body()
+        cached["data"]["federal_register"] = source("cached", age=7200)
+        cached["data"]["court_filings"] = source("cached", age=7200)
+        self.assertEqual(self.probe(cached, vertical="counsel")["badge"], "STALE")
+        aged_live = counsel_body()
+        aged_live["data"]["federal_register"] = source("live", age=700)
+        self.assertEqual(self.probe(aged_live, vertical="counsel")["badge"], "STALE")
+        partial = counsel_body()
+        partial["data"]["court_filings"] = source("unavailable")
+        self.assertEqual(self.probe(partial, vertical="counsel")["badge"], "PARTIAL")
+        wrong = counsel_body()
+        wrong["data"]["vertical"] = "realestate"
+        self.assertEqual(self.probe(wrong, vertical="counsel")["badge"], "UNAVAILABLE")
+        missing = counsel_body()
+        del missing["data"]["court_filings"]
+        self.assertEqual(self.probe(missing, vertical="counsel")["badge"], "UNAVAILABLE")
+
+    def test_nested_sample_and_modeled_statuses_are_never_promoted(self):
+        for marker in ("SAMPLE", "MODELED"):
+            with self.subTest(marker=marker):
+                body = counsel_body()
+                body["data"]["status"] = marker
+                self.assertEqual(self.probe(body, vertical="counsel")["badge"], marker)
 
 
 if __name__ == "__main__":

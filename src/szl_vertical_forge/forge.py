@@ -163,20 +163,29 @@ function stateFor(response,body){
     return {label:'UNAVAILABLE',reason:'Finance snapshot is not accepted'};
   if(body.source_revision!==undefined||body.data.source_revision!==undefined){
     const revision=/^[0-9a-f]{40}$/;
-    if(!revision.test(body.source_revision)||body.source_revision!==body.data.source_revision)
+    if(!revision.test(body.data.source_revision)||
+       (body.source_revision!==undefined&&(!revision.test(body.source_revision)||body.source_revision!==body.data.source_revision))||
+       (body.source_revision===undefined&&VERTICAL!=='finance'))
       return {label:'UNAVAILABLE',reason:'Source revision mismatch'};
   }
-  const mode=[body.status,body.data_kind,body.truth_label,body.mode,body.data.data_kind,body.data.truth_label,body.data.mode]
+  if(VERTICAL==='finance'&&body.status==='SNAPSHOT'&&!/^[0-9a-f]{40}$/.test(body.data.source_revision))
+    return {label:'UNAVAILABLE',reason:'Missing finance source revision'};
+  const mode=[body.status,body.data_kind,body.truth_label,body.mode,
+    body.data.status,body.data.state,body.data.data_kind,body.data.truth_label,body.data.mode]
     .filter(value=>typeof value==='string').map(value=>value.toUpperCase());
   if(mode.includes('SAMPLE')||mode.includes('FIXTURE'))return {label:'SAMPLE',reason:'Sample evidence'};
   if(mode.includes('MODELED'))return {label:'MODELED',reason:'Modeled evidence'};
-  if(VERTICAL==='terra'){
-    if(body.data.vertical!=='realestate')return {label:'UNAVAILABLE',reason:'Vertical mismatch'};
-    const sources=['hpd_litigations','dob_violations','rates'].map(key=>body.data[key]);
+  const sourceSpecs=VERTICAL==='terra'?[['hpd_litigations',900],['dob_violations',900],['rates',3600]]:
+    VERTICAL==='counsel'?[['federal_register',600],['court_filings',900]]:null;
+  if(sourceSpecs){
+    if(body.data.vertical!==(VERTICAL==='terra'?'realestate':'legal'))
+      return {label:'UNAVAILABLE',reason:'Vertical mismatch'};
+    const sources=sourceSpecs.map(([key])=>body.data[key]);
     if(sources.some(source=>!object(source)||!object(source.freshness)))
       return {label:'UNAVAILABLE',reason:'Missing source evidence'};
     let available=0,stale=false;
-    for(const source of sources){
+    for(let index=0;index<sources.length;index++){
+      const source=sources[index];
       const freshness=source.freshness,status=String(freshness.status||'').toLowerCase();
       if(!['live','cached','stale','unavailable'].includes(status))
         return {label:'UNAVAILABLE',reason:'Unknown source freshness'};
@@ -187,7 +196,7 @@ function stateFor(response,body){
       if(!object(source.value)||!Number.isFinite(freshness.fetched_at)||freshness.fetched_at<=0||freshness.fetched_at>Date.now()/1000+60)
         return {label:'UNAVAILABLE',reason:'Missing or invalid observation clock'};
       available++;
-      if(status!=='live'||Date.now()/1000-freshness.fetched_at>3600)stale=true;
+      if(status!=='live'||Date.now()/1000-freshness.fetched_at>sourceSpecs[index][1])stale=true;
     }
     if(!available)return {label:'UNAVAILABLE',reason:'No available source evidence'};
     if(stale)return {label:'STALE',reason:'Cached or stale source evidence'};
