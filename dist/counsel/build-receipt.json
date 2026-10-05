@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "f2d94757f0f6832d7f9989440caea98438e8114307077799ed99ca5b2c2add1c",
-    "chain_hash": "a1474459b2ecb963fe233d05ef130f72b4d80f7a5ccfcf4903f8ba2f29174653",
+    "artifact_sha256": "fff684aaf74bed5f033acdfc098f6ffacdb637e67924ff9c6203d5c53490344b",
+    "chain_hash": "857356fc400b31c5ef77567dfc6fa5f655adbcdb1e3c9ac132c6633d1033f681",
     "kind": "generated-index",
     "path": "counsel/index.html",
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "config_sha256": "8b4f2693cd5fed1139e42337583051171258169797a044c175c15b2411a17de8",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "117dd82061d3be114fe1e5207bae68a6e754514af8121e9b01abd89b53d3f0c9",
+  "fleet_master_hash": "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "counsel"

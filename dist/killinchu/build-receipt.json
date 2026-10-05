@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "91e3819fb5a8de93eb8f600b71ae77d6d7390591ad56df60d2b67470a9f1c45f",
-    "chain_hash": "47abc4c50020d3d838d7e296a07b042bed5bc3ed02fdf059050e56defb4137e0",
+    "artifact_sha256": "712aec0e2327d3a6361f8d6c406d42dfe4dd0cd0e5ba14a7ef2ae484119f10c0",
+    "chain_hash": "c6dd171cf1a4869cdaa6655bb41ff9979da4c33a3f0c3303027b1ef0580970cd",
     "kind": "generated-index",
     "path": "killinchu/index.html",
-    "prev_hash": "c953e5d28d391301381801208a23ad3ac91012dd644f6733ccbe2fb3187b2ca7"
+    "prev_hash": "07ac9d12a5b3ef26daf4a5f93b6dbfe6aed7c29ce6f0e37053763dd67f497ba7"
   },
   "config_sha256": "7c266f5c247863f6e11f99683e224cc45d96d147fd71305124bf3b01621b7872",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "117dd82061d3be114fe1e5207bae68a6e754514af8121e9b01abd89b53d3f0c9",
+  "fleet_master_hash": "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "killinchu"

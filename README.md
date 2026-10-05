@@ -15,9 +15,12 @@ Each generated vertical contains:
   that tip to the canonical receipt header (generator, algorithm, genesis,
   config digest and vertical count), so a mutated header does not verify.
 
-The browser reports `OBSERVED` only after a real HTTP response and
-`UNAVAILABLE` on errors. Reachability is never represented as a domain
-measurement, authorization, deployment, or provider state.
+The browser reports `REACHABLE` only for a validated upstream response,
+`PARTIAL` when some sources are unavailable, `STALE` for cached or aged
+observations, `SAMPLE` or `MODELED` for non-live evidence, and `UNAVAILABLE`
+for failed or malformed responses. The badge and detail panel come from the
+same response. Reachability is never represented as a domain measurement,
+authorization, deployment, or provider state.
 
 ## Audited verticals
 

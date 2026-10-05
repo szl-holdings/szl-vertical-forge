@@ -21,7 +21,7 @@ from szl_vertical_forge.forge import VERSION, main
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MASTER_HASH = (
-    "117dd82061d3be114fe1e5207bae68a6e754514af8121e9b01abd89b53d3f0c9"
+    "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901"
 )
 
 
@@ -72,7 +72,8 @@ def test_generated_html_carries_runtime_and_receipt_wiring():
     assert 'const EP="/api/live"' in page
     assert 'href="/panels"' in page
     assert 'href="/build-receipt.json"' in page
-    assert "OBSERVED - HTTP" in page
+    assert "stateFor(response,body)" in page
+    assert "EXPECTED_SOURCE=\"https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/realestate/feed\"" in page
     assert "Reachability alone is not a domain measurement" in page
 
 
