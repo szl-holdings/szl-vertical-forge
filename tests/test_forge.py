@@ -72,7 +72,8 @@ def test_generated_html_carries_runtime_and_receipt_wiring():
     assert 'const EP="/api/live"' in page
     assert 'href="/panels"' in page
     assert 'href="/build-receipt.json"' in page
-    assert "OBSERVED - HTTP" in page
+    assert "stateFor(response,body)" in page
+    assert "EXPECTED_SOURCE=\"https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/realestate/feed\"" in page
     assert "Reachability alone is not a domain measurement" in page
 
 

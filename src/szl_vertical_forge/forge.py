@@ -32,6 +32,19 @@ HEADER_FIELDS = (
 ARTIFACT_SCHEMA = "szl.vertical-forge.artifact/v1"
 ZERO_HASH = "0" * 64
 WIDGETS = {"osint", "receipts", "lambda", "probe", "ouroboros", "bm25", "quant"}
+# These flagship shells read the existing publisher's /api/live route. The
+# configured root URLs for Counsel and Finance are product pages, not evidence
+# endpoints. Sources are pinned from that publisher so a different feed cannot
+# become evidence merely because the proxy returned HTTP 200.
+PROBE_ENDPOINTS = {
+    "counsel": "https://szlholdings-counsel.hf.space/api/live",
+    "finance": "https://szlholdings-finance.hf.space/api/live",
+}
+PROBE_SOURCES = {
+    "terra": "https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/realestate/feed",
+    "counsel": "https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/legal/feed",
+    "finance": "https://szlholdings-a11oy.hf.space/api/a11oy/v1/finance/overview",
+}
 VERTICALS_PATH = Path(__file__).with_name("verticals.json")
 ASSET_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
 SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
@@ -127,6 +140,85 @@ def validate_vertical(vertical: dict[str, Any]) -> list[str]:
     return errors
 
 
+PROBE_SCRIPT = r"""
+const pill=document.getElementById('livepill'),out=document.getElementById('demodata');
+const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+function stateFor(response,body){
+  if(!response.ok)return {label:'UNAVAILABLE',reason:'HTTP '+response.status};
+  if(!object(body))return {label:'UNAVAILABLE',reason:'Missing or malformed payload'};
+  if(body.status===undefined){
+    if(EXPECTED_SOURCE)return {label:'UNAVAILABLE',reason:'Missing proxy state'};
+    return {label:'REACHABLE',reason:'Response only; evidence state unverified'};
+  }
+  if(typeof body.status!=='string'||!['REACHABLE','LIVE','SNAPSHOT','CACHED','PARTIAL','STALE','UNAVAILABLE','SAMPLE','MODELED'].includes(body.status))
+    return {label:'UNAVAILABLE',reason:'Unknown proxy state'};
+  if(EXPECTED_SOURCE&&body.source!==EXPECTED_SOURCE)
+    return {label:'UNAVAILABLE',reason:'Source mismatch'};
+  if(!Number.isInteger(body.http_status)||body.http_status<200||body.http_status>=300||body.status==='UNAVAILABLE')
+    return {label:'UNAVAILABLE',reason:'Upstream unavailable'};
+  if(!object(body.data))return {label:'UNAVAILABLE',reason:'Missing upstream data'};
+  if(body.data.status==='UNAVAILABLE'||body.data.state==='UNAVAILABLE'||body.data.ok===false)
+    return {label:'UNAVAILABLE',reason:'Upstream data unavailable'};
+  if(VERTICAL==='finance'&&body.status==='SNAPSHOT'&&body.data.ok!==true)
+    return {label:'UNAVAILABLE',reason:'Finance snapshot is not accepted'};
+  if(body.source_revision!==undefined||body.data.source_revision!==undefined){
+    const revision=/^[0-9a-f]{40}$/;
+    if(!revision.test(body.source_revision)||body.source_revision!==body.data.source_revision)
+      return {label:'UNAVAILABLE',reason:'Source revision mismatch'};
+  }
+  const mode=[body.status,body.data_kind,body.truth_label,body.mode,body.data.data_kind,body.data.truth_label,body.data.mode]
+    .filter(value=>typeof value==='string').map(value=>value.toUpperCase());
+  if(mode.includes('SAMPLE')||mode.includes('FIXTURE'))return {label:'SAMPLE',reason:'Sample evidence'};
+  if(mode.includes('MODELED'))return {label:'MODELED',reason:'Modeled evidence'};
+  if(VERTICAL==='terra'){
+    if(body.data.vertical!=='realestate')return {label:'UNAVAILABLE',reason:'Vertical mismatch'};
+    const sources=['hpd_litigations','dob_violations','rates'].map(key=>body.data[key]);
+    if(sources.some(source=>!object(source)||!object(source.freshness)))
+      return {label:'UNAVAILABLE',reason:'Missing source evidence'};
+    let available=0,stale=false;
+    for(const source of sources){
+      const freshness=source.freshness,status=String(freshness.status||'').toLowerCase();
+      if(!['live','cached','stale','unavailable'].includes(status))
+        return {label:'UNAVAILABLE',reason:'Unknown source freshness'};
+      if(status==='unavailable'){
+        if(source.value!==null)return {label:'UNAVAILABLE',reason:'Contradictory source evidence'};
+        continue;
+      }
+      if(!object(source.value)||!Number.isFinite(freshness.fetched_at)||freshness.fetched_at<=0||freshness.fetched_at>Date.now()/1000+60)
+        return {label:'UNAVAILABLE',reason:'Missing or invalid observation clock'};
+      available++;
+      if(status!=='live'||Date.now()/1000-freshness.fetched_at>3600)stale=true;
+    }
+    if(!available)return {label:'UNAVAILABLE',reason:'No available source evidence'};
+    if(stale)return {label:'STALE',reason:'Cached or stale source evidence'};
+    if(available<sources.length)return {label:'PARTIAL',reason:'Some sources unavailable'};
+  }
+  if(body.status==='STALE'||body.status==='CACHED'||body.data.status==='STALE'||body.data.status==='CACHED')
+    return {label:'STALE',reason:'Stale upstream data'};
+  if(body.status==='PARTIAL')return {label:'PARTIAL',reason:'Partially available upstream data'};
+  return {label:'REACHABLE',reason:'Upstream response; domain result unverified'};
+}
+async function probe(){
+  if(!EP){pill.textContent='DECLARED - NO PUBLIC PROBE';out.textContent='No endpoint is declared.';return}
+  try{
+    const response=await fetch(EP,{method:'GET',cache:'no-store',headers:{'Accept':'application/json'}});
+    const contentType=response.headers.get('content-type')||'';
+    let body;
+    if(contentType.includes('json'))body=await response.json();
+    else if(EXPECTED_SOURCE)body=null;
+    else body={content_type:contentType,text:(await response.text()).slice(0,1200)};
+    const state=stateFor(response,body);
+    pill.textContent=state.label;
+    pill.className='pill '+(state.label==='UNAVAILABLE'?'unavailable':'');
+    out.textContent=state.reason+'\n'+JSON.stringify(body,null,2).slice(0,4000);
+  }catch(error){
+    pill.textContent='UNAVAILABLE';pill.className='pill unavailable';out.textContent=String(error);
+  }
+}
+probe();
+"""
+
+
 LANDING = """<!doctype html>
 <html lang="en" data-szl-vertical-forge="0.2.2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark"><title>{name} — SZL Holdings</title><meta name="description" content="{tagline}">
@@ -145,13 +237,11 @@ h1{{font-size:clamp(34px,7vw,64px);line-height:1.02;margin:14px 0;font-weight:85
 <div class="kicker">SZL Holdings &middot; {domain}</div><h1>{name} <span class="grad">— evidence before inference.</span></h1><p class="lede">{tagline}.</p>
 <div class="chips"><span class="chip">Doctrine <b>v11</b></span><span class="chip">&Lambda; = Conjecture 1 &middot; advisory</span><span class="chip">receipt chain <b>SHA-256</b></span><span class="chip">widget <b>{widget}</b></span></div>
 <div class="actions"><a class="button" href="/panels">Open governed workbench</a><a class="button" href="/build-receipt.json">Verify build receipt</a></div><span class="pill" id="livepill">PROBING</span>
-<div class="panel"><h2>Runtime observation</h2><p style="color:var(--muted);font-size:13px">This read-only probe reports <code>OBSERVED</code> only after a real HTTP response. Reachability alone is not a domain measurement or authorization.</p><pre id="demodata">waiting for probe…</pre></div>
+<div class="panel"><h2>Runtime observation</h2><p style="color:var(--muted);font-size:13px">This read-only probe reports the upstream evidence state. Reachability alone is not a domain measurement or authorization.</p><pre id="demodata">waiting for probe…</pre></div>
 <div class="panel"><h2>Estate wiring</h2><div class="grid"><div class="asset"><b>Repos</b>{repos}</div><div class="asset"><b>Kernels</b>{kernels}</div><div class="asset"><b>Models</b>{models}</div><div class="asset"><b>Datasets</b>{datasets}</div><div class="asset"><b>Lineage</b>Field leader: {leader} — {job}. <b>SZL adaptation:</b> {tweak}. <b>Primary sources:</b> {lineage_sources}. <i>Take the job, never proprietary code.</i></div></div></div>
 <footer>Generated by szl-vertical-forge v0.2.2 &middot; config receipt <code>{config_receipt}</code> &middot; verify the committed receipt before deployment</footer>
 </main><script>
-const EP={endpoint_js},pill=document.getElementById('livepill'),out=document.getElementById('demodata');
-async function probe(){{if(!EP){{pill.textContent='DECLARED - NO PUBLIC PROBE';out.textContent='No endpoint is declared.';return}}try{{const r=await fetch(EP,{{method:'GET',cache:'no-store',headers:{{'Accept':'application/json'}}}});const ct=r.headers.get('content-type')||'';let body;if(ct.includes('json')){{body=await r.json()}}else{{body={{content_type:ct,text:(await r.text()).slice(0,1200)}}}}if(!r.ok)throw new Error('HTTP '+r.status);pill.textContent='OBSERVED - HTTP '+r.status;pill.className='pill observed';out.textContent=JSON.stringify(body,null,2).slice(0,4000)}}catch(e){{pill.textContent='UNAVAILABLE';pill.className='pill unavailable';out.textContent=String(e)}}}}
-probe();
+{probe_script}
 </script></body></html>
 """
 
@@ -179,8 +269,16 @@ def _source_links(items: Iterable[str]) -> str:
 def render_vertical(vertical: dict[str, Any]) -> str:
     lineage = vertical["lineage"]
     config_receipt = sha256_bytes(canonical_json(vertical).encode("utf-8"))
-    endpoint_js = json.dumps(vertical.get("endpoint"), ensure_ascii=False).replace(
+    endpoint_js = json.dumps(
+        PROBE_ENDPOINTS.get(vertical["id"], vertical.get("endpoint")),
+        ensure_ascii=False,
+    ).replace(
         "<", "\\u003c"
+    )
+    source_js = json.dumps(PROBE_SOURCES.get(vertical["id"]), ensure_ascii=False)
+    probe_script = (
+        f"const EP={endpoint_js},EXPECTED_SOURCE={source_js},"
+        f"VERTICAL={json.dumps(vertical['id'])};\n" + PROBE_SCRIPT
     )
     replacements = {
         "name": html.escape(vertical["name"], quote=True),
@@ -198,7 +296,7 @@ def render_vertical(vertical: dict[str, Any]) -> str:
         "tweak": html.escape(lineage["tweak"]),
         "lineage_sources": _source_links(lineage["sources"]),
         "config_receipt": config_receipt[:16],
-        "endpoint_js": endpoint_js,
+        "probe_script": probe_script,
     }
     # Interpret template escapes once; substituted text is never templated again.
     return LANDING.format_map(replacements)
