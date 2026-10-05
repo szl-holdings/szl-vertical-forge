@@ -1,11 +1,11 @@
 """Execute the generated browser probe against bounded, synthetic responses."""
 
 import json
-import re
 import shutil
 import subprocess
 import sys
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +16,37 @@ SOURCE = "https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/realestate/feed"
 COUNSEL_SOURCE = "https://szlholdings-a11oy.hf.space/api/a11oy/v1/vert/legal/feed"
 FINANCE_SOURCE = "https://szlholdings-a11oy.hf.space/api/a11oy/v1/finance/overview"
 FINANCE_REVISION = "a" * 40
+
+
+class InlineScriptParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self.scripts = []
+        self._chunks = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "script":
+            self._chunks = []
+
+    def handle_data(self, data):
+        if self._chunks is not None:
+            self._chunks.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "script" and self._chunks is not None:
+            self.scripts.append("".join(self._chunks))
+            self._chunks = None
+
+
+def inline_script(page):
+    parser = InlineScriptParser()
+    parser.feed(page)
+    parser.close()
+    if len(parser.scripts) != 1:
+        raise ValueError("expected exactly one inline browser script")
+    return parser.scripts[0]
+
+
 NODE = r"""
 const fs=require('node:fs'),vm=require('node:vm');
 const input=JSON.parse(fs.readFileSync(0,'utf8'));
@@ -63,7 +94,13 @@ class ProbeStatusTests(unittest.TestCase):
         cls.scripts = {}
         for vertical in load_verticals():
             page = render_vertical(vertical)
-            cls.scripts[vertical["id"]] = re.search(r"<script>(.*?)</script>", page, re.S).group(1)
+            cls.scripts[vertical["id"]] = inline_script(page)
+
+    def test_inline_script_extraction_handles_tag_case_and_attributes(self):
+        page = "<SCRIPT type='text/javascript'>const caseSafe = true;</ScRiPt>"
+        self.assertEqual(inline_script(page), "const caseSafe = true;")
+        with self.assertRaises(ValueError):
+            inline_script("<div>no browser script</div>")
 
     def probe(self, body, *, http=200, vertical="terra", mime="application/json", text=""):
         result = subprocess.run([shutil.which("node"), "-e", NODE],
