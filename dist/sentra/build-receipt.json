@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "3ddda972f66134088d8918a2c7512049f4897f6fd876e37160e5af22458bc40a",
-    "chain_hash": "79fa8dc904d23ddf08e081c8f3bbb35e0ee0986bd6401ef8b8de209dc8ac88d3",
+    "artifact_sha256": "2d1010d3ff6ebd7cc15634738f64beece27133525b71d16f9caea3ec6b250847",
+    "chain_hash": "6c727e934498f4bf0519c2e4d9374a2f13bc8fa86eff1cc8ce570dfadb6efb82",
     "kind": "generated-index",
     "path": "sentra/index.html",
-    "prev_hash": "958ee01f35fd9ca02eaa91daf8a9206db98daf5336f747097a041da0a01d02dc"
+    "prev_hash": "4342b0db1b189aa667a3f5485f0ff40e4a019d95da29a7c879686402abc71cac"
   },
   "config_sha256": "6543cec416b6ae1c6c6efdfec91c4fb1e14daae95db146897487b8ce3496b7fc",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "f1ef3cb0f1f4885c39e3834edbabf4a006d6491ad43f00fb4e645ed1b323de54",
+  "fleet_master_hash": "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "sentra"

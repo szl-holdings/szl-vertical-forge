@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "c0d0766ccc3986d68c17449e5f4d07c6a235ac5919bb254e34846832e7c8568b",
-    "chain_hash": "430f005e88e928bf22cde6f621bd227a1f58fcdfe6e90c674a2883645cda982c",
+    "artifact_sha256": "28351afe26bedc4d48fa790e80fbb89510cbb9e97a3f208f2ddad81288478b37",
+    "chain_hash": "07ac9d12a5b3ef26daf4a5f93b6dbfe6aed7c29ce6f0e37053763dd67f497ba7",
     "kind": "generated-index",
     "path": "finance/index.html",
-    "prev_hash": "c365812dcdf00272ed19e4184f80de9b1842cf56fbd3ed51c526e95acd90aeef"
+    "prev_hash": "98f6f0bb89ff3684e7b31dd11297bb3e3a962c31ae9f1a54c3a5ca6f1e11c0c2"
   },
   "config_sha256": "a0c27488ab4e665eeb8ca2e7aa46df75131fa6c43c18cc523549f50841f3d557",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "f1ef3cb0f1f4885c39e3834edbabf4a006d6491ad43f00fb4e645ed1b323de54",
+  "fleet_master_hash": "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "finance"

@@ -21,7 +21,7 @@ from szl_vertical_forge.forge import VERSION, main
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MASTER_HASH = (
-    "f1ef3cb0f1f4885c39e3834edbabf4a006d6491ad43f00fb4e645ed1b323de54"
+    "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901"
 )
 
 

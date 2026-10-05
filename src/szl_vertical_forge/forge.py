@@ -2,8 +2,9 @@
 
 The forge is deliberately a build tool, not a runtime oracle. It validates the
 audited configuration, renders bytes, writes those bytes, and emits a
-recomputable SHA-256 chain. Browser reachability is labelled OBSERVED or
-UNAVAILABLE; a successful HTTP response is never promoted to a domain result.
+recomputable SHA-256 chain. Browser probes label verified upstream evidence as
+REACHABLE, PARTIAL, STALE, SAMPLE, MODELED, or UNAVAILABLE; a successful HTTP
+response is never promoted to a domain result.
 """
 
 from __future__ import annotations
@@ -159,7 +160,7 @@ function stateFor(response,body){
   if(!object(body.data))return {label:'UNAVAILABLE',reason:'Missing upstream data'};
   if(body.data.status==='UNAVAILABLE'||body.data.state==='UNAVAILABLE'||body.data.ok===false)
     return {label:'UNAVAILABLE',reason:'Upstream data unavailable'};
-  if(VERTICAL==='finance'&&body.status==='SNAPSHOT'&&body.data.ok!==true)
+  if(VERTICAL==='finance'&&(body.status!=='SNAPSHOT'||body.data.ok!==true))
     return {label:'UNAVAILABLE',reason:'Finance snapshot is not accepted'};
   if(body.source_revision!==undefined||body.data.source_revision!==undefined){
     const revision=/^[0-9a-f]{40}$/;
@@ -175,6 +176,7 @@ function stateFor(response,body){
     .filter(value=>typeof value==='string').map(value=>value.toUpperCase());
   if(mode.includes('SAMPLE')||mode.includes('FIXTURE'))return {label:'SAMPLE',reason:'Sample evidence'};
   if(mode.includes('MODELED'))return {label:'MODELED',reason:'Modeled evidence'};
+  let sourceStale=false;
   const sourceSpecs=VERTICAL==='terra'?[['hpd_litigations',900],['dob_violations',900],['rates',3600]]:
     VERTICAL==='counsel'?[['federal_register',600],['court_filings',900]]:null;
   if(sourceSpecs){
@@ -199,12 +201,14 @@ function stateFor(response,body){
       if(status!=='live'||Date.now()/1000-freshness.fetched_at>sourceSpecs[index][1])stale=true;
     }
     if(!available)return {label:'UNAVAILABLE',reason:'No available source evidence'};
-    if(stale)return {label:'STALE',reason:'Cached or stale source evidence'};
-    if(available<sources.length)return {label:'PARTIAL',reason:'Some sources unavailable'};
+    if(available<sources.length)
+      return {label:'PARTIAL',reason:stale?'Some sources unavailable; others cached or stale':'Some sources unavailable'};
+    sourceStale=stale;
   }
-  if(body.status==='STALE'||body.status==='CACHED'||body.data.status==='STALE'||body.data.status==='CACHED')
+  if(body.status==='PARTIAL'||body.data.status==='PARTIAL')
+    return {label:'PARTIAL',reason:'Partially available upstream data'};
+  if(sourceStale||body.status==='STALE'||body.status==='CACHED'||body.data.status==='STALE'||body.data.status==='CACHED')
     return {label:'STALE',reason:'Stale upstream data'};
-  if(body.status==='PARTIAL')return {label:'PARTIAL',reason:'Partially available upstream data'};
   return {label:'REACHABLE',reason:'Upstream response; domain result unverified'};
 }
 async function probe(){
@@ -238,7 +242,7 @@ body::before{{content:"";position:fixed;inset:-30%;z-index:-1;pointer-events:non
 @keyframes drift{{from{{transform:translate3d(-2%,-1%,0)}}to{{transform:translate3d(2%,1%,0) scale(1.06)}}}}main{{max-width:980px;margin:auto;padding:64px 20px 80px}}.kicker{{font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--faint)}}
 h1{{font-size:clamp(34px,7vw,64px);line-height:1.02;margin:14px 0;font-weight:850;letter-spacing:-.5px;overflow-wrap:anywhere}}.grad{{background:linear-gradient(100deg,var(--teal),var(--blue) 45%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}}.lede{{max-width:62ch;color:var(--muted);font-size:17px}}
 .chips{{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}}.chip{{font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.028)}}.chip b{{color:var(--ink)}}.actions{{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}}.button{{display:inline-flex;align-items:center;min-height:44px;border:1px solid var(--line);border-radius:9px;padding:8px 14px;text-decoration:none;font-weight:700}}.button:focus-visible,a:focus-visible{{outline:3px solid var(--teal);outline-offset:3px}}
-.pill{{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 12px;font:700 10.5px ui-monospace,monospace;border:1px solid var(--line);color:var(--amber)}}.pill::before{{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor}}.pill.observed{{color:var(--teal);border-color:rgba(58,244,200,.35)}}.pill.unavailable{{color:var(--red)}}
+.pill{{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 12px;font:700 10.5px ui-monospace,monospace;border:1px solid var(--line);color:var(--amber)}}.pill::before{{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor}}.pill.unavailable{{color:var(--red)}}
 .panel{{border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:26px;background:linear-gradient(145deg,rgba(12,24,39,.9),rgba(8,15,27,.9))}}.panel h2{{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--teal);margin:0 0 10px}}a{{color:var(--blue);overflow-wrap:anywhere}}code{{background:rgba(255,255,255,.06);border-radius:6px;padding:1px 6px;font-size:12.5px;color:var(--teal)}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px}}.asset{{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted)}}.asset b{{display:block;color:var(--ink);font:700 10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}}.asset i{{color:var(--faint)}}pre{{white-space:pre-wrap;overflow-wrap:anywhere;max-height:360px;overflow:auto}}footer{{margin-top:34px;color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:16px}}
 @media(prefers-reduced-motion:reduce){{body::before{{animation:none}}}}@media(forced-colors:active){{*{{forced-color-adjust:auto}}}}

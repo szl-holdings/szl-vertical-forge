@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "92f7e4d430edf25bba24fb7f87a059f1cbf43870524146ffba9ba58fc8cffeda",
-    "chain_hash": "e64a8382f2a8fdb29b13216e7dc08d3fc662ac4f9b915924d5c0cc45a4b39a93",
+    "artifact_sha256": "ea89ce81e35066459059cd739b1adfe574635252719858cb22bcbb3996d052b9",
+    "chain_hash": "d71e2cb54b4ee536b39019773c876b885f31004183bb116351d4e54323704b7e",
     "kind": "generated-index",
     "path": "lyte/index.html",
-    "prev_hash": "56c5f8ed00fcb19d18bd53692f13449396f1559cfa74c33c8a5964897de30904"
+    "prev_hash": "c6dd171cf1a4869cdaa6655bb41ff9979da4c33a3f0c3303027b1ef0580970cd"
   },
   "config_sha256": "5f6ee1364f6a2e93550f46071786232e996a71cf2f5ebf9fb3daf2da50879bba",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "f1ef3cb0f1f4885c39e3834edbabf4a006d6491ad43f00fb4e645ed1b323de54",
+  "fleet_master_hash": "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "lyte"

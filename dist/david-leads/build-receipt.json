@@ -1,14 +1,14 @@
 {
   "chain_event": {
-    "artifact_sha256": "09703483a703efb39c4ebd67cfd12753f10313fc8687b7bd9a67db50aeafa90b",
-    "chain_hash": "c365812dcdf00272ed19e4184f80de9b1842cf56fbd3ed51c526e95acd90aeef",
+    "artifact_sha256": "5928e967da372835d095ba72717ede844382eed2054ea35951be743c987e417a",
+    "chain_hash": "98f6f0bb89ff3684e7b31dd11297bb3e3a962c31ae9f1a54c3a5ca6f1e11c0c2",
     "kind": "generated-index",
     "path": "david-leads/index.html",
-    "prev_hash": "a38d8f15efe11a3e007eece7618d24a3f90ae0c31a7985550dcc2ad23387f7a5"
+    "prev_hash": "857356fc400b31c5ef77567dfc6fa5f655adbcdb1e3c9ac132c6633d1033f681"
   },
   "config_sha256": "19b1151438ae715eccd8ae71d02c2ddfec326cda389aa9cb6fc21f11f8e9956c",
   "fleet_config_sha256": "4b85cb67e7003cee620119835c91a92e954f3c863fc2faa505b07aeb4a1c2a46",
-  "fleet_master_hash": "f1ef3cb0f1f4885c39e3834edbabf4a006d6491ad43f00fb4e645ed1b323de54",
+  "fleet_master_hash": "8aa52d124c5cf883ed2cfe9f0ecf476f010a5afd5d51a3f5d5ad7332038ea901",
   "generator": "szl-vertical-forge/0.2.3",
   "schema": "szl.vertical-forge.artifact/v1",
   "vertical": "david-leads"

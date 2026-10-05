@@ -165,6 +165,35 @@ class ProbeStatusTests(unittest.TestCase):
         self.assertEqual(self.probe(terra_body(data_kind="FIXTURE"))["badge"], "SAMPLE")
         self.assertEqual(self.probe(terra_body(truth_label="MODELED"))["badge"], "MODELED")
 
+    def test_nested_partial_and_missing_source_take_precedence_over_stale(self):
+        nested = terra_body()
+        nested["data"]["status"] = "PARTIAL"
+        nested["data"]["rates"] = source("cached", age=7200)
+        result = self.probe(nested)
+        self.assertEqual(result["badge"], "PARTIAL")
+        self.assertIn("Partially available upstream data", result["detail"])
+        self.assertIn('"status": "PARTIAL"', result["detail"])
+
+        mixed = counsel_body()
+        mixed["data"]["federal_register"] = source("unavailable")
+        mixed["data"]["court_filings"] = source("cached", age=7200)
+        result = self.probe(mixed, vertical="counsel")
+        self.assertEqual(result["badge"], "PARTIAL")
+        self.assertIn("Some sources unavailable; others cached or stale", result["detail"])
+        self.assertIn('"status": "unavailable"', result["detail"])
+
+    def test_finance_requires_snapshot_contract_for_every_success(self):
+        for status in ("REACHABLE", "LIVE", "CACHED", "STALE", "PARTIAL"):
+            with self.subTest(status=status):
+                body = {"status": status, "http_status": 200, "source": FINANCE_SOURCE,
+                        "data": {"source_revision": FINANCE_REVISION}}
+                result = self.probe(body, vertical="finance")
+                self.assertEqual(result["badge"], "UNAVAILABLE")
+                self.assertIn("Finance snapshot is not accepted", result["detail"])
+        missing_revision = {"status": "SNAPSHOT", "http_status": 200,
+                            "source": FINANCE_SOURCE, "data": {"ok": True}}
+        self.assertEqual(self.probe(missing_revision, vertical="finance")["badge"], "UNAVAILABLE")
+
     def test_lyte_html_is_reachability_only(self):
         result = self.probe(None, vertical="lyte", mime="text/html", text="<html>sample</html>")
         self.assertEqual(result["badge"], "REACHABLE")
