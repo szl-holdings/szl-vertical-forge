@@ -15,6 +15,7 @@ import html
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import quote, urlsplit
@@ -490,9 +491,13 @@ def write_output(
     for relative, content in sorted(result["files"].items()):
         target = _safe_destination(root, relative)
         target.parent.mkdir(parents=True, exist_ok=True)
-        temporary = target.with_name(target.name + ".tmp")
-        temporary.write_bytes(content)
-        os.replace(temporary, target)
+        # A predictable sibling such as index.html.tmp may already be a
+        # symlink. Stage in a newly created private directory on the same
+        # filesystem, retaining atomic replacement and cleanup on failure.
+        with tempfile.TemporaryDirectory(prefix=".forge-", dir=target.parent) as staging:
+            temporary = Path(staging) / target.name
+            temporary.write_bytes(content)
+            os.replace(temporary, target)
         written.append(relative)
     return {"state": "WRITTEN", "files": written, "output_dir": str(root.resolve())}
 
