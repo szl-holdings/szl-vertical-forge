@@ -89,3 +89,5 @@ verify the immutable provider revision plus live routes independently.
 ## License
 
 Apache-2.0 — canonical organization text is referenced by `LICENSE`.
+
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
