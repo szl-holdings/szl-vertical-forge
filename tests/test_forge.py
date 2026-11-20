@@ -175,6 +175,33 @@ def test_verify_output_detects_artifact_tampering(tmp_path):
     assert verified["mismatched"] == ["terra/index.html"]
 
 
+def test_verify_output_rejects_untracked_deployment_file(tmp_path):
+    result = forge([load_verticals()[0]])
+    assert write_output(result, tmp_path)["state"] == "WRITTEN"
+    extra = tmp_path / "killinchu" / "untracked.js"
+    extra.write_text("unaudited artifact", encoding="utf-8")
+
+    verified = verify_output(result, tmp_path)
+    assert verified["state"] == "INVALID"
+    assert verified["unexpected"] == ["killinchu/untracked.js"]
+    assert verified["missing"] == []
+    assert verified["mismatched"] == []
+    assert extra.read_text(encoding="utf-8") == "unaudited artifact"
+
+
+def test_verify_output_rejects_unlisted_previous_vertical(tmp_path):
+    result = forge([load_verticals()[0]])
+    write_output(result, tmp_path)
+    stale = tmp_path / "terra" / "index.html"
+    stale.parent.mkdir()
+    stale.write_text("stale or tampered landing", encoding="utf-8")
+
+    verified = verify_output(result, tmp_path)
+    assert verified["state"] == "INVALID"
+    assert verified["unexpected"] == ["terra/index.html"]
+    assert stale.exists()
+
+
 def test_committed_distribution_matches_the_generator():
     verified = verify_output(forge(), ROOT / "dist")
     assert verified["state"] == "VERIFIED_LOCAL_ARTIFACTS"
