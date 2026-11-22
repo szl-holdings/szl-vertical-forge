@@ -76,7 +76,12 @@ python -m szl_vertical_forge.forge verify --vertical terra --output-dir build/te
 
 `generate` exits nonzero unless every expected file is written and then
 verified byte-for-byte. `verify` never repairs mismatches; missing or changed
-bytes produce `INVALID` and a nonzero exit status.
+bytes produce `INVALID` and a nonzero exit status. Verification also
+requires an exact artifact population: unexpected files (including stale
+verticals) and symlinks are reported as `unexpected` and cause `INVALID`.
+It never deletes unlisted entries. The local SHA-256 chain checks generated
+bytes but is unsigned, not in-toto functionary attestation or deployment
+authorization.
 
 ## Operational boundary
 

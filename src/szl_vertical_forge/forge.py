@@ -512,6 +512,20 @@ def verify_output(
     root = Path(output_dir)
     missing: list[str] = []
     mismatched: list[str] = []
+    # Fail closed on deployment-surface drift, not merely a valid subset of
+    # files. Unknown files or symlinks are not covered by the receipt chain.
+    # Read-only: verification does not delete or repair any output.
+    expected_paths = set(result["files"])
+    unexpected: list[str] = []
+    if root.is_symlink():
+        unexpected.append(".")
+    elif root.is_dir():
+        for candidate in root.rglob("*"):
+            if candidate.is_symlink() or candidate.is_file():
+                relative = candidate.relative_to(root).as_posix()
+                if candidate.is_symlink() or relative not in expected_paths:
+                    unexpected.append(relative)
+    unexpected.sort()
     for relative, expected in sorted(result["files"].items()):
         target = _safe_destination(root, relative)
         if not target.is_file():
@@ -523,7 +537,7 @@ def verify_output(
     )
     state = (
         "VERIFIED_LOCAL_ARTIFACTS"
-        if not missing and not mismatched and chain["state"] == "VERIFIED"
+        if not missing and not mismatched and not unexpected and chain["state"] == "VERIFIED"
         else "INVALID"
     )
     return {
@@ -531,6 +545,7 @@ def verify_output(
         "files_checked": len(result["files"]),
         "missing": missing,
         "mismatched": mismatched,
+        "unexpected": unexpected,
         "chain": chain,
         "master_hash": result["master_hash"],
     }
